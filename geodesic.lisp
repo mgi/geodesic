@@ -1,0 +1,235 @@
+(in-package :geodesic)
+
+;; This is a Common Lisp version of Karney’s 2012 paper:
+;; https://doi.org/10.1007/s00190-012-0578-z
+
+(defparameter *a* 6378137 "WGS84 equatorial Earth radius in meter.")
+(defparameter *f* (/ 9241319 2756290147) #+nil(/ 311 92758) "WGS84 ellipsoid flattening.")
+
+(defparameter *b* (- *a* (* *f* *a*)))
+(defparameter *n* (/ (- *a* *b*) (+ *a* *b*)))
+
+(let ((square-a (* *a* *a*))
+      (square-b (* *b* *b*)))
+  (defparameter *square-e* (/ (- square-a square-b) square-a))
+  (defparameter *square-e-prime* (/ (- square-a square-b) square-b)))
+
+;; equation (6)
+(defun reduce-latitude (latitude)
+  (atan-r (*r (- 1 *f*) (tan-r latitude))))
+
+(defun dereduce-latitude (beta)
+  (atan-r (/r (tan-r beta) (-r 1 *f*))))
+
+;; equation (8)
+(defun latitude (omega alpha0 i3)
+  (-r omega (*r *f* (sin-r alpha0) i3)))
+
+;; equation (10)
+(defun alpha0 (beta azimuth)
+  (atan-r (*r (sin-r azimuth) (cos-r beta))
+          (abs-r (cos-r azimuth) (*r (sin-r azimuth) (sin-r beta)))))
+
+;; equation (11)
+(defun sigma (beta azimuth)
+  (atan-r (sin-r beta) (*r (cos-r azimuth) (cos-r beta)))
+  #+nil
+  (if (and (zerop beta)
+           (= azimuth (/ pi 2)))
+      0
+      (phase (complex (* (cos azimuth) (cos beta))
+                      (sin beta)))))
+
+;; equation (12)
+(defun omega (alpha0 sigma)
+  (atan-r (*r (sin-r alpha0) (sin-r sigma)) (cos-r sigma)))
+
+;; equation (14) and (13)
+(defun alpha-beta (alpha0 sigma)
+  (let ((realpart (*r (cos-r alpha0) (cos-r sigma)))
+        (imagpart (sin-r alpha0)))
+    (values (atan-r imagpart realpart)
+            (atan-r (*r (cos-r alpha0) (sin-r sigma)) (abs-r realpart imagpart)))))
+
+;; equation (17)
+(defun a-1 (epsilon)
+  (/r (+r 1
+          (loop with sum = 0
+                for i in '(2 6 8 14 16)
+                for j from 2 by 2
+                do (setf sum (+r sum (/r (expt-r epsilon j) (expt 2 i))))
+                finally (return sum)))
+      (-r 1 epsilon)))
+
+;; equation (18)
+(defun c-1 (epsilon)
+  (let ((e (make-array 11 :initial-contents (loop for i below 11 collect (expt-r epsilon i)))))
+    (list (+r (*r -1/2 epsilon)
+             (*r 3/16 (aref e 3))
+             (*r -1/32 (aref e 5))
+             (*r 19/2048 (aref e 7))
+             (*r -3/4096 (aref e 9)))
+          (+r (*r -1/16 epsilon epsilon)
+             (*r 1/32 (aref e 4))
+             (*r -9/2048 (aref e 6))
+             (*r 7/4096 (aref e 8))
+             (*r 1/65536 (aref e 10)))
+          (+r (*r -1/48 (aref e 3))
+             (*r 3/256 (aref e 5))
+             (*r -3/2048 (aref e 7))
+             (*r 17/24576 (aref e 9)))
+          (+r (*r -5/512 (aref e 4))
+             (*r 3/512 (aref e 6))
+             (*r -11/16384 (aref e 8))
+             (*r 3/8192 (aref e 10)))
+          (+r (*r -7/1280 (aref e 5))
+             (*r 7/2048 (aref e 7))
+             (*r -3/8192 (aref e 9)))
+          (+r (*r -7/2048 (aref e 6))
+             (*r 9/4096 (aref e 8))
+             (*r -117/524288 (aref e 10)))
+          (+r (*r -33/14336 (aref e 7))
+             (*r 99/65536 (aref e 9)))
+          (+r (*r -429/262144 (aref e 8))
+             (*r 143/131072 (aref e 10)))
+          (+r (*r -715/589824 (aref e 9)))
+          (+r (*r -2431/2621440 (aref e 10))))))
+
+;; equation (15) and (23)
+(defun i (sigma an cn)
+  (*r an (+r sigma (loop with sum = 0
+                         for c in cn
+                         for i from 1
+                         do (setf sum (+r sum (*r c (sin-r (*r 2 i sigma)))))
+                         finally (return sum)))))
+
+;; equation (21)
+(defun c-prime-1 (epsilon)
+  (let ((e (make-array 11 :initial-contents (loop for i below 11 collect (expt-r epsilon i)))))
+    (list (+r (*r 1/2 epsilon)
+              (*r -9/32 (aref e 3))
+              (*r 205/1536 (aref e 5))
+              (*r -4879/73728 (aref e 7))
+              (*r 9039/327680 (aref e 9)))
+          (+r (*r 5/16 (aref e 2))
+              (*r -37/96 (aref e 4))
+              (*r 1335/4096 (aref e 6))
+              (*r -86171/368640 (aref e 8))
+              (*r 4119073/28311552 (aref e 10)))
+          (+r (*r 29/96 (aref e 3))
+              (*r -75/128 (aref e 5))
+              (*r 2901/4096 (aref e 7))
+              (*r -443327/655360 (aref e 9)))
+          (+r (*r 539/1536 (aref e 4))
+              (*r -2391/2560 (aref e 6))
+              (*r 1082857/737280 (aref e 8))
+              (*r -2722891/1548288 (aref e 10)))
+          (+r (*r 3467/7680 (aref e 5))
+              (*r -28223/18432 (aref e 7))
+              (*r 1361343/458752 (aref e 9)))
+          (+r (*r 38081/61440 (aref e 6))
+              (*r -733437/286720 (aref e 8))
+              (*r 10820079/1835008 (aref e 10)))
+          (+r (*r 459485/516096 (aref e 7))
+              (*r -709743/163840 (aref e 9)))
+          (+r (*r 109167851/82575360 (aref e 8))
+              (*r -550835669/74317824 (aref e 10)))
+          (+r (*r 83141299/41287680 (aref e 9)))
+          (+r (*r 9303339907/2972712960 (aref e 10))))))
+
+;; equation (25)
+(defparameter *P-c-3*
+  (make-array '(4 10)
+              :initial-contents `((0
+                                   ,(- 1/4 (/ *n* 4))
+                                   ,(- 1/8 (/ (*  *n* *n*) 8))
+                                   ,(+ 3/64 (* 3/64 *n*) (* -1/64 *n* *n*))
+                                   ,(+ 5/128 (/ *n* 64))
+                                   3/128
+                                   0 0 0 0)
+                                  (0
+                                   ,(+ 1/16 (* -3/32 *n*) (/ (* *n* *n*) 32))
+                                   ,(- 3/64 (/ *n* 32) (* 3/64 *n* *n*))
+                                   ,(+ 3/128 (/ *n* 128))
+                                   5/256 0 0 0 0 0)
+                                  (0 0
+                                     ,(+ 5/192 (* -3/64 *n*) (* 5/192 *n* *n*))
+                                     ,(- 3/128 (* 5/192 *n*))
+                                     7/512 0 0 0 0 0)
+                                  (0 0 0 ,(- 7/512 (* 7/256 *n*)) 7/512 0 0 0 0 0)))
+  "Polynomial factors for C-3.")
+
+(defun c-3 (epsilon)
+  (let ((e2 (*r epsilon epsilon))
+        (e3 (expt-r epsilon 3))
+        (e4 (expt-r epsilon 4))
+        (e5 (expt-r epsilon 5))
+        (e (make-array 10 :initial-contents (loop for i below 10
+                                                  collect (expt-r epsilon i)))))
+    (list #+nil(+ (* (aref *P-c-3* 0 0) epsilon)
+                  (* (aref *P-c-3* 0 1) e2)
+                  (* (aref *P-c-3* 0 2) e3)
+                  (* (aref *P-c-3* 0 3) e4)
+                  (* (aref *P-c-3* 0 4) e5))
+          (loop with sum = 0
+                for i from 0 to 9
+                do (setf sum (+r sum (*r (aref *P-c-3* 0 i) (aref e i))))
+                finally (return sum))
+          (+r (*r (aref *P-c-3* 1 1) e2)
+              (*r (aref *P-c-3* 1 2) e3)
+              (*r (aref *P-c-3* 1 3) e4)
+              (*r (aref *P-c-3* 1 4) e5))
+          (+r (*r (aref *P-c-3* 2 2) e3)
+              (*r (aref *P-c-3* 2 3) e4)
+              (*r (aref *P-c-3* 2 4) e5))
+          (+r (*r (aref *P-c-3* 3 3) e4)
+              (*r (aref *P-c-3* 3 4) e5))
+          (+r (*r 21/2560 e5)))))
+
+;; equation (20)
+(defun sigma-tau (tau c-prime-1)
+  (+r tau
+      (loop with sum = 0
+            for c in c-prime-1
+            for i from 1
+            do (setf sum (+r sum (*r c (sin-r (*r 2 i tau)))))
+            finally (return sum))))
+
+;; equation (24)
+(defparameter *F-a-3*
+  (make-array 4 :initial-contents (list (- 1/2 (/ *n* 2))
+                                        (+ 1/4 (/ *n* 8) (* -3/8 *n* *n*))
+                                        (+ 1/16 (* 3/16 *n*) (/ (* *n* *n*) 16))
+                                        (+ 3/64 (/ *n* 32))))
+  "Factors for A-3.")
+
+(defun a-3 (epsilon)
+  (-r 1
+      (*r (aref *F-a-3* 0) epsilon)
+      (*r (aref *F-a-3* 1) epsilon epsilon)
+      (*r (aref *F-a-3* 2) (expt-r epsilon 3))
+      (*r (aref *F-a-3* 3) (expt-r epsilon 4))
+      (*r 3/128 (expt-r epsilon 5))))
+
+(defun direct (latitude azimuth distance)
+  "LATITUDE and AZIMUTH in radians. DISTANCE in meters."
+  (let* ((beta (reduce-latitude latitude))
+         (alpha0 (alpha0 beta azimuth))
+         (sigma1 (sigma beta azimuth))
+         (omega1 (omega alpha0 sigma1))
+         (square-k (let ((c (cos-r alpha0))) (*r *square-e-prime* c c)))
+         (epsilon (let ((c (sqrt-r (+r square-k 1)))) (/r (-r c 1) (+r c 1))))
+         (a1 (a-1 epsilon))
+         (i1 (i sigma1 a1 (c-1 epsilon)))
+         (s1 (*r i1 *b*))
+         (s2 (+r s1 distance))
+         (tau2 (/r s2 (*r *b* a1)))
+         (sigma2 (sigma-tau tau2 (c-prime-1 epsilon))))
+    (multiple-value-bind (alpha2 beta2) (alpha-beta alpha0 sigma2)
+      (let* ((omega2 (omega alpha0 sigma2))
+             (a3 (a-3 epsilon))
+             (i3-sigma1 (i sigma1 a3 (c-3 epsilon)))
+             (i3-sigma2 (i sigma2 a3 (c-3 epsilon)))
+             (lat12 (-r (latitude omega2 alpha0 i3-sigma2)
+                        (latitude omega1 alpha0 i3-sigma1))))
+        (values (dereduce-latitude beta2) lat12 alpha2)))))

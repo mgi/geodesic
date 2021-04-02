@@ -19,12 +19,11 @@
 
 (test geod-test-short
   (with-open-file (fd "GeodTest-short.dat")
-    (loop with epsilon = 1e-8
-          for line = (read-line fd nil)
+    (loop for line = (read-line fd nil)
           while line
           do (destructuring-bind (lat1 lon1 azi1 lat2 lon2 azi2 s12 a12 m12 surf12) (parse-line line)
                (declare (ignore a12 m12 surf12))
                (multiple-value-bind (mylat2 d myazi2) (direct (radians lat1) (radians azi1) s12)
                  (declare (ignore d))
-                 (is (about= (degrees mylat2) lat2 epsilon))
-                 (is (about= (degrees myazi2) azi2 epsilon)))))))
+                 (is (about= mylat2 (radians lat2) 1e-14))
+                 (is (about= myazi2 (radians azi2) 1e-10)))))))

@@ -22,7 +22,7 @@
   (atan (/ (tan beta) (- 1 *f*))))
 
 ;; equation (8)
-(defun latitude (omega alpha0 i3)
+(defun longitude (omega alpha0 i3)
   (- omega (* *f* (sin alpha0) i3)))
 
 ;; equation (10)
@@ -247,6 +247,6 @@
         (let* ((omega2 (omega alpha0 sigma2))
                (i3-sigma1 (i sigma1 a3 c3))
                (i3-sigma2 (i sigma2 a3 c3))
-               (lat12 (- (latitude omega2 alpha0 i3-sigma2)
-                         (latitude omega1 alpha0 i3-sigma1))))
-          (values (dereduce-latitude beta2) lat12 alpha2))))))
+               (lon12 (- (longitude omega2 alpha0 i3-sigma2)
+                         (longitude omega1 alpha0 i3-sigma1))))
+          (values (dereduce-latitude beta2) lon12 alpha2))))))

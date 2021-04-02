@@ -50,10 +50,9 @@
 
 ;; equation (17)
 (defun a-1 (epsilon)
-  (/ (1+
-      (loop for i in '(2 6 8 14 16)
-            for j from 2 by 2
-            sum (/ (expt epsilon j) (expt 2 i))))
+  (/ (1+ (loop for i in '(2 6 8 14 16)
+               for j from 2 by 2
+               sum (/ (expt epsilon j) (expt 2 i))))
      (- 1 epsilon)))
 
 ;; equation (18)
@@ -130,52 +129,97 @@
           (+ (* 83141299/41287680 (aref e 9)))
           (+ (* 9303339907/2972712960 (aref e 10))))))
 
-;; equation (25)
-(defparameter *P-c-3*
-  (make-array '(4 10)
-              :initial-contents `((0
-                                   ,(- 1/4 (/ *n* 4))
-                                   ,(- 1/8 (/ (*  *n* *n*) 8))
-                                   ,(+ 3/64 (* 3/64 *n*) (* -1/64 *n* *n*))
-                                   ,(+ 5/128 (/ *n* 64))
-                                   3/128
-                                   0 0 0 0)
-                                  (0
-                                   ,(+ 1/16 (* -3/32 *n*) (/ (* *n* *n*) 32))
-                                   ,(- 3/64 (/ *n* 32) (* 3/64 *n* *n*))
-                                   ,(+ 3/128 (/ *n* 128))
-                                   5/256 0 0 0 0 0)
-                                  (0 0
-                                     ,(+ 5/192 (* -3/64 *n*) (* 5/192 *n* *n*))
-                                     ,(- 3/128 (* 5/192 *n*))
-                                     7/512 0 0 0 0 0)
-                                  (0 0 0 ,(- 7/512 (* 7/256 *n*)) 7/512 0 0 0 0 0)))
-  "Polynomial factors for C-3.")
+;; equation (24) and (25)
+(let* ((n *n*)
+       (n2 (* n n))
+       (n3 (expt n 3))
+       (n4 (expt n 4)))
+  (defparameter *F-a-3*
+    (make-array 10 :initial-contents
+                (list 0
+                      (- 1/2 (/ n 2))
+                      (+ 1/4 (/ n 8) (* -3/8 n2))
+                      (+ 1/16 (* 3/16 n) (/ n2 16) (* -5/16 n3))
+                      (+ 3/64 (/ n 32) (* 5/32 n2) (* 5/128 n3) (* -35/128 n4))
+                      (+ 3/128 (* 5/128 n) (* 5/256 n2) (* 35/256 n3) (* 7/256 n4))
+                      (+ 5/256 (* 15/1024 n) (* 35/1024 n2) (* 7/512 n3))
+                      (+ 25/2048 (* 35/2048 n) (* 21/2048 n2))
+                      (+ 175/16384 (* 35/4096 n))
+                      245/32768))
+  "Factors for A-3.")
+  (defparameter *P-c-3*
+    (make-array '(9 10) :initial-contents
+                (list (list 0
+                            (- 1/4 (/ n 4))
+                            (- 1/8 (/ n2 8))
+                            (+ 3/64 (* 3/64 n) (* -1/64 n2) (* -5/64 n3))
+                            (+ 5/128 (/ n 64) (/ n2 64) (* -1/64 n3) (* -7/128 n4))
+                            (+ 3/128 (* 11/512 n) (* 3/512 n2) (/ n3 256) (* -7/512 n4))
+                            (+ 21/1024 (* 5/512 n) (* 13/1024 n2) (/ n3 512))
+                            (+ 243/16384 (* 189/16384 n) (* 83/16384 n2))
+                            (+ 435/32768 (* 109/16384 n))
+                            345/32768)
+                      (list 0 0
+                            (+ 1/16 (* -3/32 n) (/ n2 32))
+                            (+ 3/64 (* -1/32 n) (* -3/64 n2) (/ n3 32))
+                            (+ 3/128 (/ n 128) (* -9/256 n2) (* -3/128 n3) (* 7/256 n4))
+                            (+ 5/256 (/ n 256) (* -1/128 n2) (* -7/256 n3) (* -3/256 n4))
+                            (+ 27/2048 (* 69/8192 n) (* -39/8192 n2) (* -47/4096 n3))
+                            (+ 187/16384 (* 39/8192 n) (* 31/16384 n2))
+                            (+ 287/32768 (* 47/8192 n))
+                            255/32768)
+                      (list 0 0 0
+                            (+ 5/192 (* -3/64 n) (* 5/192 n2) (* -1/192 n3))
+                            (+ 3/128 (* -5/192 n) (* -1/64 n2) (* 5/192 n3) (* -1/128 n4))
+                            (+ 7/512 (* -1/384 n) (* -77/3072 n2) (* 5/3072 n3) (* 65/3072 n4))
+                            (+ 3/256 (* -1/1024 n) (* -71/6144 n2) (* -47/3072 n3))
+                            (+ 139/16384 (* 143/49152 n) (* -383/49152 n2))
+                            (+ 243/32768 (* 95/49152 n))
+                            581/98304)
+                      (list 0 0 0 0
+                            (+ 7/512 (* -7/256 n) (* 5/256 n2) (* -7/1024 n3) (/ n4 1024))
+                            (+ 7/512 (* -5/256 n) (* -7/2048 n2) (* 9/512 n3) (* -21/2048 n4))
+                            (+ 9/1024 (* -43/8192 n) (* -129/8192 n2) (* 39/4096 n3))
+                            (+ 127/16384  (* -23/8192 n) (* -165/16384 n2))
+                            (+ 193/32768 (* 3/8192 n))
+                            171/32768)
+                      (list 0 0 0 0 0
+                            (+ 21/2560 (* -9/512 n) (* 15/1024 n2) (* -7/1024 n3) (* 9/5120 n4))
+                            (+ 9/1024 (* -15/1024 n) (* 3/2048 n2) (* 57/5120 n3))
+                            (+ 99/16384 (* -91/16384 n) (* -781/81920 n2))
+                            (+ 179/32768 (* -55/16384 n))
+                            141/32768)
+                      (list 0 0 0 0 0 0
+                            (+ 11/2048 (* -99/8192 n) (* 275/24576 n2) (* -77/12288 n3))
+                            (+ 99/16384 (* -275/24576 n) (* 55/16384 n2))
+                            (+ 143/32768 (* -253/49152 n))
+                            33/8192)
+                      (list 0 0 0 0 0 0 0
+                            (+ 429/114688 (* -143/16384 n) (* 143/16384 n2))
+                            (+ 143/32768 (* -143/16384 n))
+                            429/131072)
+                      (list 0 0 0 0 0 0 0 0
+                            (+ 715/262144 (* -429/65536 n))
+                            429/131072)
+                      (list 0 0 0 0 0 0 0 0 0 2431/1179648)))
+    "Polynomial factors for C-3."))
 
-(defun c-3 (epsilon)
-  (let ((e2 (* epsilon epsilon))
-        (e3 (expt epsilon 3))
-        (e4 (expt epsilon 4))
-        (e5 (expt epsilon 5))
-        (e (make-array 10 :initial-contents (loop for i below 10
+(defun ac-3 (epsilon)
+  (let* ((k (array-dimension *P-c-3* 1))
+         (e (make-array k :initial-contents (loop for i below k
                                                   collect (expt epsilon i)))))
-    (list #+nil(+ (* (aref *P-c-3* 0 0) epsilon)
-                  (* (aref *P-c-3* 0 1) e2)
-                  (* (aref *P-c-3* 0 2) e3)
-                  (* (aref *P-c-3* 0 3) e4)
-                  (* (aref *P-c-3* 0 4) e5))
-          (loop for i from 0 to 9
-                sum (* (aref *P-c-3* 0 i) (aref e i)))
-          (+ (* (aref *P-c-3* 1 1) e2)
-              (* (aref *P-c-3* 1 2) e3)
-              (* (aref *P-c-3* 1 3) e4)
-              (* (aref *P-c-3* 1 4) e5))
-          (+ (* (aref *P-c-3* 2 2) e3)
-              (* (aref *P-c-3* 2 3) e4)
-              (* (aref *P-c-3* 2 4) e5))
-          (+ (* (aref *P-c-3* 3 3) e4)
-              (* (aref *P-c-3* 3 4) e5))
-          (+ (* 21/2560 e5)))))
+    (values
+     (- 1
+        (loop for i below (array-dimension *F-a-3* 0)
+              sum (* (aref *F-a-3* i) (aref e i)))
+     (* (aref *F-a-3* 0) epsilon)
+     (* (aref *F-a-3* 1) epsilon epsilon)
+     (* (aref *F-a-3* 2) (expt epsilon 3))
+     (* (aref *F-a-3* 3) (expt epsilon 4))
+     (* 3/128 (expt epsilon 5)))
+     (loop for i below (array-dimension *P-c-3* 0)
+           collect (loop for j below k
+                         sum (* (aref *P-c-3* i j) (aref e j)))))))
 
 ;; equation (20)
 (defun sigma-tau (tau c-prime-1)
@@ -183,22 +227,6 @@
      (loop for c in c-prime-1
            for i from 1
            sum (* c (sin (* 2 i tau))))))
-
-;; equation (24)
-(defparameter *F-a-3*
-  (make-array 4 :initial-contents (list (- 1/2 (/ *n* 2))
-                                        (+ 1/4 (/ *n* 8) (* -3/8 *n* *n*))
-                                        (+ 1/16 (* 3/16 *n*) (/ (* *n* *n*) 16))
-                                        (+ 3/64 (/ *n* 32))))
-  "Factors for A-3.")
-
-(defun a-3 (epsilon)
-  (- 1
-     (* (aref *F-a-3* 0) epsilon)
-     (* (aref *F-a-3* 1) epsilon epsilon)
-     (* (aref *F-a-3* 2) (expt epsilon 3))
-     (* (aref *F-a-3* 3) (expt epsilon 4))
-     (* 3/128 (expt epsilon 5))))
 
 (defun direct (latitude azimuth distance)
   "LATITUDE and AZIMUTH in radians. DISTANCE in meters."
@@ -215,10 +243,10 @@
          (tau2 (/ s2 (* *b* a1)))
          (sigma2 (sigma-tau tau2 (c-prime-1 epsilon))))
     (multiple-value-bind (alpha2 beta2) (alpha-beta alpha0 sigma2)
-      (let* ((omega2 (omega alpha0 sigma2))
-             (a3 (a-3 epsilon))
-             (i3-sigma1 (i sigma1 a3 (c-3 epsilon)))
-             (i3-sigma2 (i sigma2 a3 (c-3 epsilon)))
-             (lat12 (- (latitude omega2 alpha0 i3-sigma2)
-                       (latitude omega1 alpha0 i3-sigma1))))
-        (values (dereduce-latitude beta2) lat12 alpha2)))))
+      (multiple-value-bind (a3 c3) (ac-3 epsilon)
+        (let* ((omega2 (omega alpha0 sigma2))
+               (i3-sigma1 (i sigma1 a3 c3))
+               (i3-sigma2 (i sigma2 a3 c3))
+               (lat12 (- (latitude omega2 alpha0 i3-sigma2)
+                         (latitude omega1 alpha0 i3-sigma1))))
+          (values (dereduce-latitude beta2) lat12 alpha2))))))

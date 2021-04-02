@@ -1,5 +1,5 @@
 (defpackage :geodesic/test
-  (:use :common-lisp :geodesic :1am :computable-reals))
+  (:use :common-lisp :geodesic :1am))
 
 (in-package :geodesic/test)
 
@@ -17,17 +17,14 @@
 (defun parse-line (line)
   (mapcar #'parse-float (split-sequence:split-sequence #\Space line :remove-empty-subseqs t)))
 
-(defun rat-approx-r (x k)
-  (/ (approx-r x k) (expt 2 k)))
-
 (test geod-test-short
   (with-open-file (fd "GeodTest-short.dat")
-    (loop with epsilon = 1e-12
+    (loop with epsilon = 1e-8
           for line = (read-line fd nil)
           while line
           do (destructuring-bind (lat1 lon1 azi1 lat2 lon2 azi2 s12 a12 m12 surf12) (parse-line line)
                (declare (ignore a12 m12 surf12))
                (multiple-value-bind (mylat2 d myazi2) (direct (radians lat1) (radians azi1) s12)
                  (declare (ignore d))
-                 (is (about= (rat-approx-r (degrees mylat2) 40) lat2 epsilon))
-                 (is (about= (rat-approx-r (degrees myazi2) 40) azi2 epsilon)))))))
+                 (is (about= (degrees mylat2) lat2 epsilon))
+                 (is (about= (degrees myazi2) azi2 epsilon)))))))

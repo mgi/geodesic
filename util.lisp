@@ -28,7 +28,7 @@ and the form should be \"{-}[0-9]+\" or \"{-}[0-9]*.[0-9]+\""
               (*r imagpart imagpart))))
 
 (defun radians (angle)
-  (*r +pi-r+ 1/180 angle))
+  (* pi 1/180 angle))
 
 (defun degrees (angle)
-  (*r 180 (/r +pi-r+) angle))
+  (* 180 (/ pi) angle))

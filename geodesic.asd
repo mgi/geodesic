@@ -4,7 +4,6 @@
   :author "Manuel Giraud <manuel@ledu-giraud.fr>"
   :description "Library for geodesic calculations."
   :serial t
-  :depends-on (:computable-reals)
   :components ((:file "package")
                (:file "util")
                (:file "geodesic"))

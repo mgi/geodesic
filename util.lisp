@@ -26,9 +26,3 @@ and the form should be \"{-}[0-9]+\" or \"{-}[0-9]*.[0-9]+\""
 (defun abs-r (realpart imagpart)
   (sqrt-r (+r (*r realpart realpart)
               (*r imagpart imagpart))))
-
-(defun radians (angle)
-  (* pi 1/180 angle))
-
-(defun degrees (angle)
-  (* 180 (/ pi) angle))

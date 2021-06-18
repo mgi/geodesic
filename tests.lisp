@@ -25,5 +25,5 @@
                (declare (ignore lon1 lon2 a12 m12 surf12))
                (multiple-value-bind (mylat2 d myazi2) (direct (radians lat1) (radians azi1) s12)
                  (declare (ignore d))
-                 (is (about= mylat2 (radians lat2) 1e-14))
-                 (is (about= myazi2 (radians azi2) 1e-10)))))))
+                 (is (about= mylat2 (radians lat2) 1d-14))
+                 (is (about= myazi2 (radians azi2) 1d-10)))))))

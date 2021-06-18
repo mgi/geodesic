@@ -48,6 +48,9 @@
     (values (phase c)
             (phase (complex (abs c) (* (cos alpha0) (sin sigma)))))))
 
+;; Note the series expansions is valid to order f^10 and copied from:
+;; https://geographiclib.sourceforge.io/html/geodesic.html#geodseries
+
 ;; equation (17)
 (defun a-1 (epsilon)
   (/ (1+ (loop for i in '(2 6 8 14 16)
@@ -146,7 +149,7 @@
                       (+ 25/2048 (* 35/2048 n) (* 21/2048 n2))
                       (+ 175/16384 (* 35/4096 n))
                       245/32768))
-  "Factors for A-3.")
+    "Factors for A-3.")
   (defparameter *P-c-3*
     (make-array '(9 10) :initial-contents
                 (list (list 0
@@ -211,12 +214,7 @@
     (values
      (- 1
         (loop for i below (array-dimension *F-a-3* 0)
-              sum (* (aref *F-a-3* i) (aref e i)))
-     (* (aref *F-a-3* 0) epsilon)
-     (* (aref *F-a-3* 1) epsilon epsilon)
-     (* (aref *F-a-3* 2) (expt epsilon 3))
-     (* (aref *F-a-3* 3) (expt epsilon 4))
-     (* 3/128 (expt epsilon 5)))
+              sum (* (aref *F-a-3* i) (aref e i))))
      (loop for i below (array-dimension *P-c-3* 0)
            collect (loop for j below k
                          sum (* (aref *P-c-3* i j) (aref e j)))))))
@@ -230,9 +228,9 @@
 
 (defun direct (latitude azimuth distance)
   "LATITUDE and AZIMUTH in radians. DISTANCE in meters."
-  (let* ((beta (reduce-latitude latitude))
-         (alpha0 (alpha0 beta azimuth))
-         (sigma1 (sigma beta azimuth))
+  (let* ((beta1 (reduce-latitude latitude))
+         (alpha0 (alpha0 beta1 azimuth))
+         (sigma1 (sigma beta1 azimuth))
          (omega1 (omega alpha0 sigma1))
          (square-k (let ((c (cos alpha0))) (* *square-e-prime* c c)))
          (epsilon (let ((c (sqrt (+ square-k 1)))) (/ (1- c) (1+ c))))

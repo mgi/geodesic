@@ -1,4 +1,13 @@
 (defpackage :geodesic
   (:use :common-lisp)
   (:export #:parse-float
-           #:direct))
+           #:radians
+           #:degrees
+           #:cubic-roots
+           #:quartic-roots
+           #:make-geo-point
+           #:point-latitude
+           #:point-longitude
+           #:point-altitude
+           #:direct
+           #:move))

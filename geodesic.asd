@@ -7,6 +7,7 @@
   :depends-on (:polygon)
   :components ((:file "package")
                (:file "util")
+               (:file "poly")
                (:file "geodesic"))
   :in-order-to ((test-op (test-op :geodesic/test))))
 

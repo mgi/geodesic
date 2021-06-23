@@ -4,7 +4,10 @@
 ;; https://doi.org/10.1007/s00190-012-0578-z
 
 (defparameter *a* 6378137 "WGS84 equatorial Earth radius in meter.")
-(defparameter *f* (/ 9241319 2756290147) #+nil(/ 311 92758) "WGS84 ellipsoid flattening.")
+(defparameter *f*
+  (/ 1000000000 298257223563)
+  #+nil(/ 9241319 2756290147)
+  #+nil(/ 311 92758) "WGS84 ellipsoid flattening.")
 
 (defparameter *b* (- *a* (* *f* *a*)))
 (defparameter *n* (/ (- *a* *b*) (+ *a* *b*)))
@@ -50,12 +53,6 @@
 
 ;; Note the series expansions is valid to order f^10 and copied from:
 ;; https://geographiclib.sourceforge.io/html/geodesic.html#geodseries
-
-(defun horner (x &rest p)
-  (loop with result = (first p)
-        for a in (rest p)
-        do (setf result (+ a (* result x)))
-        finally (return result)))
 
 ;; equation (17)
 (defun a-1 (epsilon)
@@ -199,3 +196,119 @@
                (lon12 (- (longitude omega2 alpha0 i3-sigma2)
                          (longitude omega1 alpha0 i3-sigma1))))
           (values (dereduce-latitude beta2) lon12 alpha2))))))
+
+;; (direct (radians 40) (radians 30) 10e6)
+
+;; Human friendly interface to the direct problem.
+(defun move (point azimuth distance)
+  "Return a geographical point after moving POINT at DISTANCE (meters)
+toward AZIMUTH (degrees)."
+  (multiple-value-bind (lat lon12 azi2) (direct (radians (point-latitude point))
+                                                (radians azimuth)
+                                                distance)
+    (declare (ignore azi2))
+    (make-geo-point (degrees lat)
+                    (+ (point-longitude point) (degrees lon12))
+                    (point-altitude point))))
+
+(defun move2 (point azimuth distance)
+  (let* ((earth-radius 6378137)
+         (az (radians azimuth))
+         (dlat (* distance (cos az)))
+         (dlon (* distance (sin az)))
+         (theta-lat (/ dlat earth-radius))
+         (theta-lon (/ dlon earth-radius)))
+    (make-geo-point (+ (point-latitude point) (degrees theta-lat))
+                    (+ (point-longitude point) (degrees theta-lon))
+                    (point-altitude point))))
+
+(defun vincenty-sphere (lat1 lat2 dlon)
+  (atan (sqrt (+ (expt (* (cos lat2) (sin dlon)) 2)
+                 (expt (- (* (cos lat1) (sin lat2)) (* (sin lat1) (cos lat2) (cos dlon))) 2)))
+        (+ (* (sin lat1) (sin lat2)) (* (cos lat1) (cos lat2) (cos dlon)))))
+
+(defun newlatitude (lat1 dlon azimuth)
+  (atan (+ (sin dlon) (* (tan azimuth) (sin lat1) (cos dlon)))
+        (* (tan azimuth) (cos lat1))))
+
+(defun inv2 (lat1 lon1 lat2 lon2)
+  (let* ((earth-radius 6378137)
+         (dlon (- lon2 lon1))
+         (dsigma #+nil(acos (+ (* (sin lat1) (sin lat2)) (* (cos lat1) (cos lat2) (cos dlon))))
+                 (vincenty-sphere lat1 lat2 dlon)))
+    (* earth-radius dsigma)))
+
+(defun direct2 (latitude azimuth distance)
+  (let ((dlon (* (sin azimuth) distance)))
+    (newlatitude latitude dlon azimuth)))
+
+;; equation (44)
+(defun normalize-latitudes (lat1 lat2)
+  "lat1 <= 0 and lat1 <= lat2 <= -lat1 (i.e. lat2 is closest to zero)."
+  ;; permute if lat1 is closest to zero
+  (when (< (abs lat1) (abs lat2))
+    (rotatef lat1 lat2))
+  ;; turn until lat1 is negative
+  (loop with 2pi = (* 2 pi)
+        until (<= lat1 0)
+        do (decf lat1 2pi)
+           (decf lat2 2pi))
+  (values lat1 lat2))
+
+;; equation (48)
+(defun omega-bar (beta1 beta2)
+  (sqrt (- 1 (* *square-e* (expt (/ (+ (cos beta1) (cos beta2)) 2) 2)))))
+
+;; equation (49) and (50)
+(defun z1 (beta1 beta2 omega12)
+  (complex (- (* (cos beta1) (sin beta2))
+              (* (sin beta1) (cos beta2) (cos omega12)))
+           (* (cos beta2) (sin omega12))))
+
+(defun z2 (beta1 beta2 omega12)
+  (complex (- (* (cos beta1) (sin beta2) (cos omega12))
+              (* (sin beta1) (cos beta2)))
+           (* (cos beta1) (sin omega12))))
+
+;; equation (51)
+(defun sigma12 (beta1 beta2 omega12 z1)
+  (phase (complex (+ (* (sin beta1) (sin beta2))
+                     (* (cos beta1) (cos beta2) (cos omega12)))
+                  (abs z1))))
+
+(defun nearly-antipodal-p (lat1 lat2 dlon)
+  (let ((epsilon (/ pi 360)))
+    (and (< (abs (+ lat1 lat2)) epsilon)
+         (< (abs (- dlon pi)) epsilon))))
+
+(defun indirect (lat1 lat2 dlon)
+  (multiple-value-bind (lat1 lat2) (normalize-latitudes lat1 lat2)
+    (let* ((dlon (normalize dlon))
+           (beta1 (reduce-latitude lat1))
+           (beta2 (reduce-latitude lat2))
+           (omega-bar (omega-bar beta1 beta2))
+           (omega12 (/ dlon omega-bar))
+           (z1 (z1 beta1 beta2 omega12))
+           (sigma12 (sigma12 beta1 beta2 omega12 z1))
+           alpha1)
+      (if (nearly-antipodal-p lat1 lat2 dlon)
+          (let* ((cb1 (cos beta1))
+                 (delta (* *f* *a* pi cb1 cb1))
+                 ;; equation (53)
+                 (x (/ (* (- dlon pi) *a* cb1) delta))
+                 (y (/ (* (+ beta1 beta2) *a*) delta))
+                 (y2 (* y y)))
+            (format t "~@{~a~%~}" x y
+                    (mapcar #'(lambda (x) (plusp (realpart x))) (multiple-value-list
+                                                                 (quartic-roots 2 (- 1 (* x x) y2) (* -2 y2) (- y2)))))
+            (setf alpha1 delta))
+          (setf alpha1 (phase z1)))
+      (values alpha1
+              (degrees beta1)
+              (degrees beta2)
+              (degrees omega12)
+              (degrees sigma12)
+              (degrees (phase z1))
+              (* *a* omega-bar sigma12)))))
+
+;; (indirect (radians -30.12345d0) (radians -30.12344d0) (radians 0.00005d0))

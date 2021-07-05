@@ -30,20 +30,20 @@
 
 ;; equation (10)
 (defun alpha0 (beta azimuth)
-  (phase (complex (abs (complex (cos azimuth) (* (sin azimuth) (sin beta))))
-                  (* (sin azimuth) (cos beta)))))
+  (atan (* (sin azimuth) (cos beta))
+        (abs (complex (cos azimuth) (* (sin azimuth) (sin beta))))))
 
 ;; equation (11)
 (defun sigma (beta azimuth)
   (if (and (zerop beta)
            (= azimuth (/ pi 2)))
       0
-      (phase (complex (* (cos azimuth) (cos beta))
-                      (sin beta)))))
+      (atan (sin beta)
+            (* (cos azimuth) (cos beta)))))
 
 ;; equation (12)
 (defun omega (alpha0 sigma)
-  (phase (complex (cos sigma) (* (sin alpha0) (sin sigma)))))
+  (atan (* (sin alpha0) (sin sigma)) (cos sigma)))
 
 ;; equation (14) and (13)
 (defun alpha-beta (alpha0 sigma)
@@ -169,10 +169,9 @@
 
 ;; equation (20)
 (defun sigma-tau (tau c-prime-1)
-  (+ tau
-     (loop for c in c-prime-1
-           for i from 1
-           sum (* c (sin (* 2 i tau))))))
+  (+ tau (loop for c in c-prime-1
+               for i from 1
+               sum (* c (sin (* 2 i tau))))))
 
 (defun direct (latitude azimuth distance)
   "LATITUDE and AZIMUTH in radians. DISTANCE in meters."
@@ -180,8 +179,8 @@
          (alpha0 (alpha0 beta1 azimuth))
          (sigma1 (sigma beta1 azimuth))
          (omega1 (omega alpha0 sigma1))
-         (square-k (let ((c (cos alpha0))) (* *square-e-prime* c c)))
-         (epsilon (let ((c (sqrt (+ square-k 1)))) (/ (1- c) (1+ c))))
+         (square-k (* *square-e-prime* (cos alpha0) (cos alpha0)))
+         (epsilon (let ((c (sqrt (1+ square-k)))) (/ (1- c) (1+ c))))
          (a1 (a-1 epsilon))
          (i1 (i sigma1 a1 (c-1 epsilon)))
          (s1 (* i1 *b*))
@@ -282,12 +281,8 @@ toward AZIMUTH (degrees)."
   ;; permute if lat1 is closest to zero
   (when (< (abs lat1) (abs lat2))
     (rotatef lat1 lat2))
-  ;; turn until lat1 is negative
-  (loop with 2pi = (* 2 pi)
-        until (<= lat1 0)
-        do (decf lat1 2pi)
-           (decf lat2 2pi))
-  (values lat1 lat2))
+  (values (* (- (signum lat1)) lat1)
+          (* (- (signum lat1)) lat2)))
 
 ;; equation (5) and (45)
 (defun alpha2 (alpha1 beta1 beta2)
@@ -296,7 +291,7 @@ toward AZIMUTH (degrees)."
         (cb1 (cos beta1))
         (cb2 (cos beta2)))
     (atan (/ (* sa1 cb1) cb2)
-          (/ (sqrt (+ (* ca1 ca1 cb1 cb1) (* cb2 cb2) (- (* cb1 cb1)))) cb2))))
+          (/ (sqrt (+ (* ca1 ca1 cb1 cb1) (- (* cb2 cb2) (* cb1 cb1)))) cb2))))
 
 ;; equation (48)
 (defun omega-bar (beta1 beta2)
@@ -324,20 +319,21 @@ toward AZIMUTH (degrees)."
     (and (< (abs (+ lat1 lat2)) epsilon)
          (< (abs (- lon12 pi)) epsilon))))
 
-(defun init-alpha1 (lat1 lat2 lon12 beta1 beta2 z1)
-  (if (nearly-antipodal-p lat1 lat2 lon12)
-      (let* ((cb1 (cos beta1))
-             (delta (* *f* *a* pi cb1 cb1))
-             ;; equation (53)
-             (x (/ (* (- lon12 pi) *a* cb1) delta))
-             (y (/ (* (+ beta1 beta2) *a*) delta))
-             (y2 (* y y))
-             (roots (quartic-roots 1 2 (- 1 (* x x) y2) (* -2 y2) (- y2)))
-             (mu (find-if #'plusp roots)))
-        (if (zerop y)
-            (atan (- x) (* (signum x) (sqrt (max 0 (- 1 (* x x))))))
-            (atan (- (/ x (1+ mu))) (/ y mu))))
-      (phase z1)))
+(defun init-alpha1 (lat1 lat2 lon12 beta1 beta2 omega12)
+  (labels ((myplusp (x)
+             (plusp (realpart x))))
+    (if (nearly-antipodal-p lat1 lat2 lon12)
+        (let* ((delta (* *f* *a* pi (cos beta1) (cos beta1)))
+               ;; equation (53)
+               (x (/ (* (- lon12 pi) *a* (cos beta1)) delta))
+               (y (/ (* (+ beta1 beta2) *a*) delta))
+               (y2 (* y y))
+               (roots (quartic-roots 1 2 (- 1 (* x x) y2) (* -2 y2) (- y2)))
+               (mu (realpart (find-if #'myplusp roots))))
+          (if (zerop y)
+              (atan (- x) (* (signum x) (sqrt (max 0 (- 1 (* x x))))))
+              (atan (- (/ x (1+ mu))) (/ y mu))))
+        (phase (z1 beta1 beta2 omega12)))))
 
 ;; equation (46)
 (defun delta-alpha1 (delta-l12 m12 alpha2 beta2)
@@ -360,13 +356,11 @@ toward AZIMUTH (degrees)."
 
 (defun indirect (lat1 lat2 lon12)
   (multiple-value-bind (lat1 lat2) (normalize-latitudes lat1 lat2)
-    (let* ((lon12 (normalize lon12))
-           (beta1 (reduce-latitude lat1))
+    (let* ((beta1 (reduce-latitude lat1))
            (beta2 (reduce-latitude lat2))
            (omega-bar (omega-bar beta1 beta2))
            (omega12 (/ lon12 omega-bar))
-           (z1 (z1 beta1 beta2 omega12))
-           (alpha1 (init-alpha1 lat1 lat2 lon12 beta1 beta2 z1))
+           (alpha1 (init-alpha1 lat1 lat2 lon12 beta1 beta2 omega12))
            (delta-lon12 1))
       ;; First: find correct alpha1
       (loop repeat 30
@@ -376,11 +370,11 @@ toward AZIMUTH (degrees)."
                  (multiple-value-bind (a3 c3) (ac-3 epsilon)
                    (let* ((i3-sigma1 (i sigma1 a3 c3))
                           (i3-sigma2 (i sigma2 a3 c3))
-                          (lon12-new (abs (- (normalize (longitude omega2 alpha0 i3-sigma2))
-                                             (normalize (longitude omega1 alpha0 i3-sigma1)))))
+                          (lon12-new (abs (- (longitude omega2 alpha0 i3-sigma2)
+                                             (longitude omega1 alpha0 i3-sigma1))))
                           (m12 (m12 k2 sigma1 sigma2 epsilon)))
-                     (setf delta-lon12 (- lon12-new lon12)
-                           alpha1 (+ alpha1 (delta-alpha1 delta-lon12 m12 alpha2 beta2)))))))
+                     (setf delta-lon12 (- lon12-new lon12))
+                     (incf alpha1 (delta-alpha1 delta-lon12 m12 alpha2 beta2))))))
       ;; Second: resolve s12
       (multiple-value-bind (alpha0 sigma1 omega1 alpha2 sigma2 omega2 k2 epsilon)
           (solve-triangle alpha1 beta1 beta2)

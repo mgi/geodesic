@@ -12,10 +12,8 @@
 (defparameter *b* (- *a* (* *f* *a*)))
 (defparameter *n* (/ (- *a* *b*) (+ *a* *b*)))
 
-(let ((square-a (* *a* *a*))
-      (square-b (* *b* *b*)))
-  (defparameter *square-e* (/ (- square-a square-b) square-a))
-  (defparameter *square-e-prime* (/ (- square-a square-b) square-b)))
+(defparameter *square-e* (/ (- (* *a* *a*) (* *b* *b*)) (* *a* *a*)))
+(defparameter *square-e-prime* (/ (- (* *a* *a*) (* *b* *b*)) (* *b* *b*)))
 
 ;; equation (6)
 (defun reduce-latitude (latitude)

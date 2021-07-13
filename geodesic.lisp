@@ -362,7 +362,7 @@ toward AZIMUTH (degrees)."
            (delta-lon12 1))
       ;; First: find correct alpha1
       (loop repeat 50
-            while (> (abs delta-lon12) 1e-7)
+            while (> (abs delta-lon12) 1d-12)
             do (multiple-value-bind (alpha0 sigma1 omega1 alpha2 sigma2 omega2 k2 epsilon)
                    (solve-triangle alpha1 beta1 beta2)
                  (multiple-value-bind (a3 c3) (ac-3 epsilon)

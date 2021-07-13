@@ -361,7 +361,7 @@ toward AZIMUTH (degrees)."
            (alpha1 (init-alpha1 lat1 lat2 lon12 beta1 beta2 omega12))
            (delta-lon12 1))
       ;; First: find correct alpha1
-      (loop repeat 30
+      (loop repeat 50
             while (> (abs delta-lon12) 1e-7)
             do (multiple-value-bind (alpha0 sigma1 omega1 alpha2 sigma2 omega2 k2 epsilon)
                    (solve-triangle alpha1 beta1 beta2)
@@ -371,8 +371,8 @@ toward AZIMUTH (degrees)."
                           (lon12-new (abs (- (longitude omega2 alpha0 i3-sigma2)
                                              (longitude omega1 alpha0 i3-sigma1))))
                           (m12 (m12 k2 sigma1 sigma2 epsilon)))
-                     (setf delta-lon12 (- lon12-new lon12))
-                     (incf alpha1 (delta-alpha1 delta-lon12 m12 alpha2 beta2))))))
+                     (setf delta-lon12 (- lon12-new lon12)
+                           alpha1 (normalize (+ alpha1 (delta-alpha1 delta-lon12 m12 alpha2 beta2))))))))
       ;; Second: resolve s12
       (multiple-value-bind (alpha0 sigma1 omega1 alpha2 sigma2 omega2 k2 epsilon)
           (solve-triangle alpha1 beta1 beta2)
@@ -384,3 +384,5 @@ toward AZIMUTH (degrees)."
 
 ;; (indirect (radians -30.12345d0) (radians -30.12344d0) (radians 0.00005d0))
 ;; (indirect (radians -30d0) (radians 29.9d0) (radians 179.8d0))
+;; (indirect (radians 1.8363687) (radians -2.3656454) (radians 179.76564))
+;; (indirect (radians (parse-float "1.836368651078")) (radians (parse-float "-2.365645296794186765")) (radians (parse-float "179.765637637545230805")))

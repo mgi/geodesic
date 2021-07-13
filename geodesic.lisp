@@ -329,7 +329,7 @@ toward AZIMUTH (degrees)."
                (roots (quartic-roots 1 2 (- 1 (* x x) y2) (* -2 y2) (- y2)))
                (mu (realpart (find-if #'myplusp roots))))
           (if (zerop y)
-              (atan (- x) (* (signum x) (sqrt (max 0 (- 1 (* x x))))))
+              (atan (- x) (* (signum x) (sqrt (- 1 (* x x)))))
               (atan (- (/ x (1+ mu))) (/ y mu))))
         (phase (z1 beta1 beta2 omega12)))))
 

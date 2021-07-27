@@ -60,6 +60,28 @@
                  (is (about= mylat2 (radians lat2) 1d-14))
                  (is (about= myazi2 (radians azi2) 1d-10)))))))
 
+(test geod-short-indirect
+  (with-open-file (fd "GeodTest-short.dat")
+    (loop with failed = 0
+          for line = (read-line fd nil)
+          for line-count from 1
+          while line
+          do (destructuring-bind (lat1 lon1 azi1 lat2 lon2 azi2 s12 a12 m12 surf12)
+                 (parse-line line)
+               (declare (ignore azi1 azi2 a12 m12 surf12))
+               (multiple-value-bind (mys12 myazi1 myazi2)
+                   (indirect (radians lat1) (radians lat2) (radians (- lon2 lon1)))
+                 (declare (ignore myazi1 myazi2))
+                 (unless (> (- lon2 lon1) 179.5)
+                   (is (about= mys12 s12 1)))
+                 (when (> (abs (- s12 mys12)) 1)
+                   (incf failed)
+                   #+nil
+                   (format t "~&~a: ~@{~a ~}~%"
+                           line-count (float lat1 1d0) (float lat2 1d0) (float (- lon2 lon1) 1d0)
+                           (float s12 1d0) mys12 (- s12 mys12)))))
+          finally (format t "~&~d failed on ~d~%" failed (1- line-count)))))
+
 #+nil
 (test geod-long-test
   (with-open-file (fd "GeodTest.dat")

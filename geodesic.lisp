@@ -359,10 +359,11 @@ toward AZIMUTH (degrees)."
            (omega-bar (omega-bar beta1 beta2))
            (omega12 (/ lon12 omega-bar))
            (alpha1 (init-alpha1 lat1 lat2 lon12 beta1 beta2 omega12))
-           (delta-lon12 1))
+           (delta-lon12 (/ pi 180))
+           (tolerance (/ pi 1e15)))
       ;; First: find correct alpha1
       (loop repeat 50
-            while (> (abs delta-lon12) 1d-15)
+            while (> (abs delta-lon12) tolerance)
             do (multiple-value-bind (alpha0 sigma1 omega1 alpha2 sigma2 omega2 k2 epsilon)
                    (solve-triangle alpha1 beta1 beta2)
                  (multiple-value-bind (a3 c3) (ac-3 epsilon)

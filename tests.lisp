@@ -60,7 +60,7 @@
                  (is (about= mylat2 (radians lat2) 1d-14))
                  (is (about= myazi2 (radians azi2) 1d-10)))))))
 
-(test geod-short-indirect
+(test geod-short-inverse
   (with-open-file (fd "GeodTest-short.dat")
     (loop with failed = 0
           for line = (read-line fd nil)
@@ -70,7 +70,7 @@
                  (parse-line line)
                (declare (ignore azi1 azi2 a12 m12 surf12))
                (multiple-value-bind (mys12 myazi1 myazi2)
-                   (indirect (radians lat1) (radians lat2) (radians (- lon2 lon1)))
+                   (inverse (radians lat1) (radians lat2) (radians (- lon2 lon1)))
                  (declare (ignore myazi1 myazi2))
                  (unless (> (- lon2 lon1) 179.5)
                    (is (about= mys12 s12 1)))

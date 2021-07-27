@@ -10,5 +10,5 @@
            #:point-longitude
            #:point-altitude
            #:direct
-           #:indirect
+           #:inverse
            #:move))

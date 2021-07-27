@@ -352,7 +352,7 @@ toward AZIMUTH (degrees)."
                      (1+ (sqrt (1+ k2))))))
     (values alpha0 sigma1 omega1 alpha2 sigma2 omega2 k2 epsilon)))
 
-(defun indirect (lat1 lat2 lon12)
+(defun inverse (lat1 lat2 lon12)
   (multiple-value-bind (lat1 lat2) (normalize-latitudes lat1 lat2)
     (let* ((beta1 (reduce-latitude lat1))
            (beta2 (reduce-latitude lat2))
@@ -382,7 +382,7 @@ toward AZIMUTH (degrees)."
               (s2 (* *b* (i sigma2 (a-1 epsilon) (c-1 epsilon)))))
           (values (abs (- s2 s1)) alpha1 alpha2))))))
 
-;; (indirect (radians -30.12345d0) (radians -30.12344d0) (radians 0.00005d0))
-;; (indirect (radians -30d0) (radians 29.9d0) (radians 179.8d0))
-;; (indirect (radians 1.8363687) (radians -2.3656454) (radians 179.76564))
-;; (indirect (radians (parse-float "1.836368651078")) (radians (parse-float "-2.365645296794186765")) (radians (parse-float "179.765637637545230805")))
+;; (inverse (radians -30.12345d0) (radians -30.12344d0) (radians 0.00005d0))
+;; (inverse (radians -30d0) (radians 29.9d0) (radians 179.8d0))
+;; (inverse (radians 1.8363687) (radians -2.3656454) (radians 179.76564))
+;; (inverse (radians (parse-float "1.836368651078")) (radians (parse-float "-2.365645296794186765")) (radians (parse-float "179.765637637545230805")))

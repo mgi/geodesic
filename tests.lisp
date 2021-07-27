@@ -72,14 +72,16 @@
                (multiple-value-bind (mys12 myazi1 myazi2)
                    (inverse (radians lat1) (radians lat2) (radians (- lon2 lon1)))
                  (declare (ignore myazi1 myazi2))
-                 (unless (> (- lon2 lon1) 179.5)
-                   (is (about= mys12 s12 1)))
-                 (when (> (abs (- s12 mys12)) 1)
+                 (unless (> (- lon2 lon1) 179.4)
+                   (is (about= mys12 s12 1/1000)))
+                 (unless (about= mys12 s12 1/1000)
                    (incf failed)
                    #+nil
                    (format t "~&~a: ~@{~a ~}~%"
-                           line-count (float lat1 1d0) (float lat2 1d0) (float (- lon2 lon1) 1d0)
-                           (float s12 1d0) mys12 (- s12 mys12)))))
+                           line-count
+                           ;;(float lat1 1d0) (float lat2 1d0) (float (- lon2 lon1) 1d0)
+                           ;;(float s12 1d0) mys12
+                           (float (- lon2 lon1) 1d0) (- s12 mys12)))))
           finally (format t "~&~d failed on ~d~%" failed (1- line-count)))))
 
 #+nil

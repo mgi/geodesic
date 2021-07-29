@@ -45,9 +45,7 @@
              (list (- (+ s u) (/ b (* 3 a)))
                    (complex real imag)
                    (complex real (- imag)))))
-          ((and (zerop f)
-                (zerop g)
-                (zerop h))
+          ((zerop h)
            ;; 3 equal real roots
            (let ((x (- (3rt (/ d a)))))
              (list x x x))))))

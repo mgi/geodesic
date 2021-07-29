@@ -314,8 +314,9 @@ toward AZIMUTH (degrees)."
 
 (defun nearly-antipodal-p (lat1 lat2 lon12)
   (let ((epsilon (/ pi 360)))
-    (and (< (abs (+ lat1 lat2)) epsilon)
-         (< (abs (- lon12 pi)) epsilon))))
+    (or (and (< (abs (+ lat1 lat2)) epsilon)
+             (< (abs (- lon12 pi)) epsilon))
+        (> lon12 (- pi epsilon)))))
 
 (defun init-alpha1 (lat1 lat2 lon12 beta1 beta2 omega12)
   (labels ((myplusp (x)
@@ -362,7 +363,7 @@ toward AZIMUTH (degrees)."
            (delta-lon12 (/ pi 180))
            (tolerance (/ pi 1e15)))
       ;; First: find correct alpha1
-      (loop repeat 50
+      (loop repeat 30
             while (> (abs delta-lon12) tolerance)
             do (multiple-value-bind (alpha0 sigma1 omega1 alpha2 sigma2 omega2 k2 epsilon)
                    (solve-triangle alpha1 beta1 beta2)

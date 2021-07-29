@@ -11,6 +11,10 @@
     (incf 1am::*pass-count*))
   (values))
 
+(defvar *short-file*
+  (merge-pathnames "GeodTest-short.dat"
+                   (load-time-value (or #.*compile-file-pathname* *load-pathname*))))
+
 (defun about= (a b epsilon)
   (< (abs (- b a)) epsilon))
 
@@ -84,8 +88,8 @@
           finally (unless (zerop failed)
                     (format t "~&~d failed on ~d~%" failed (1- line-count))))))
 
-(test geod-short-direct (direct-test "GeodTest-short.dat"))
-(test geod-short-inverse (inverse-test "GeodTest-short.dat"))
+(test geod-short-direct (direct-test *short-file*))
+(test geod-short-inverse (inverse-test *short-file*))
 
 ;; Only if you have time on your hands (and not everything pass :-|)
 #+nil

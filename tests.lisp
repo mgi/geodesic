@@ -47,8 +47,8 @@
       (is (about= r3 (/ (- 1 (sqrt 5)) 2) epsilon))
       (is (about= r4 (/ (- 3 (sqrt 17)) 2) epsilon)))))
 
-(test geod-short-direct
-  (with-open-file (fd "GeodTest-short.dat")
+(defun direct-test (filename)
+  (with-open-file (fd filename)
     (loop for line = (read-line fd nil)
           while line
           do (destructuring-bind (lat1 lon1 azi1 lat2 lon2 azi2 s12 a12 m12 surf12)
@@ -60,8 +60,8 @@
                  (is (about= mylat2 (radians lat2) 1d-14))
                  (is (about= myazi2 (radians azi2) 1d-10)))))))
 
-(test geod-short-inverse
-  (with-open-file (fd "GeodTest-short.dat")
+(defun inverse-test (filename)
+  (with-open-file (fd filename)
     (loop with failed = 0
           for line = (read-line fd nil)
           for line-count from 1
@@ -72,26 +72,23 @@
                (multiple-value-bind (mys12 myazi1 myazi2)
                    (inverse (radians lat1) (radians lat2) (radians (- lon2 lon1)))
                  (declare (ignore myazi1 myazi2))
-                 (unless (> (- lon2 lon1) 179.4)
-                   (is (about= mys12 s12 1/1000)))
+                 (is (about= mys12 s12 1/1000))
                  (unless (about= mys12 s12 1/1000)
                    (incf failed)
                    #+nil
                    (format t "~&~a: ~@{~a ~}~%"
                            line-count
-                           ;;(float lat1 1d0) (float lat2 1d0) (float (- lon2 lon1) 1d0)
-                           ;;(float s12 1d0) mys12
-                           (float (- lon2 lon1) 1d0) (- s12 mys12)))))
-          finally (format t "~&~d failed on ~d~%" failed (1- line-count)))))
+                           (float lat1 1d0) (float lat2 1d0) (float (- lon2 lon1) 1d0)
+                           (float s12 1d0) mys12
+                           (- s12 mys12)))))
+          finally (unless (zerop failed)
+                    (format t "~&~d failed on ~d~%" failed (1- line-count))))))
 
+(test geod-short-direct (direct-test "GeodTest-short.dat"))
+(test geod-short-inverse (inverse-test "GeodTest-short.dat"))
+
+;; Only if you have time on your hands (and not everything pass :-|)
 #+nil
-(test geod-long-test
-  (with-open-file (fd "GeodTest.dat")
-    (loop for line = (read-line fd nil)
-          while line
-          do (destructuring-bind (lat1 lon1 azi1 lat2 lon2 azi2 s12 a12 m12 surf12) (parse-line line)
-               (declare (ignore lon1 lon2 a12 m12 surf12))
-               (multiple-value-bind (mylat2 d myazi2) (direct (radians lat1) (radians azi1) s12)
-                 (declare (ignore d))
-                 (is (about= mylat2 (radians lat2) 1d-14))
-                 (is (about= myazi2 (radians azi2) 1d-9)))))))
+(test geod-long-direct (direct-test "GeodTest.dat"))
+#+nil
+(test geod-long-inverse (inverse-test "GeodTest.dat"))

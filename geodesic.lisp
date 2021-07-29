@@ -196,49 +196,6 @@
 
 ;; (direct (radians 40) (radians 30) 10e6)
 
-;; Human friendly interface to the direct problem.
-(defun move (point azimuth distance)
-  "Return a geographical point after moving POINT at DISTANCE (meters)
-toward AZIMUTH (degrees)."
-  (multiple-value-bind (lat lon12 azi2) (direct (radians (point-latitude point))
-                                                (radians azimuth)
-                                                distance)
-    (declare (ignore azi2))
-    (make-geo-point (degrees lat)
-                    (+ (point-longitude point) (degrees lon12))
-                    (point-altitude point))))
-
-(defun move2 (point azimuth distance)
-  (let* ((earth-radius 6378137)
-         (az (radians azimuth))
-         (dlat (* distance (cos az)))
-         (dlon (* distance (sin az)))
-         (theta-lat (/ dlat earth-radius))
-         (theta-lon (/ dlon earth-radius)))
-    (make-geo-point (+ (point-latitude point) (degrees theta-lat))
-                    (+ (point-longitude point) (degrees theta-lon))
-                    (point-altitude point))))
-
-(defun vincenty-sphere (lat1 lat2 dlon)
-  (atan (sqrt (+ (expt (* (cos lat2) (sin dlon)) 2)
-                 (expt (- (* (cos lat1) (sin lat2)) (* (sin lat1) (cos lat2) (cos dlon))) 2)))
-        (+ (* (sin lat1) (sin lat2)) (* (cos lat1) (cos lat2) (cos dlon)))))
-
-(defun newlatitude (lat1 dlon azimuth)
-  (atan (+ (sin dlon) (* (tan azimuth) (sin lat1) (cos dlon)))
-        (* (tan azimuth) (cos lat1))))
-
-(defun inv2 (lat1 lon1 lat2 lon2)
-  (let* ((earth-radius 6378137)
-         (dlon (- lon2 lon1))
-         (dsigma #+nil(acos (+ (* (sin lat1) (sin lat2)) (* (cos lat1) (cos lat2) (cos dlon))))
-                 (vincenty-sphere lat1 lat2 dlon)))
-    (* earth-radius dsigma)))
-
-(defun direct2 (latitude azimuth distance)
-  (let ((dlon (* (sin azimuth) distance)))
-    (newlatitude latitude dlon azimuth)))
-
 ;; equation (40)
 (defun j (sigma epsilon)
   (- (i sigma (a-1 epsilon) (c-1 epsilon))

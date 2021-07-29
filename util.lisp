@@ -39,16 +39,3 @@ and the form should be \"{-}[0-9]+\" or \"{-}[0-9]*.[0-9]+\""
       (loop until (>= angle (- pi))
             do (incf angle 2pi))
       angle)))
-
-;; Aliases to use polygon:point as geographical one.
-;;
-;; Latitude and longitude are in degrees. Altitude
-;; is in meters.
-(setf (fdefinition 'point-longitude) #'polygon:point-x
-      (fdefinition 'point-latitude) #'polygon:point-y
-      (fdefinition 'point-altitude) #'polygon:point-z)
-
-(defun make-geo-point (latitude longitude &optional (altitude 0))
-  "LATITUDE and LONGITUDE should be in decimal degrees. ALTITUDE should
-be in meters."
-  (polygon:make-point :x longitude :y latitude :z altitude))

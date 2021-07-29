@@ -1,5 +1,5 @@
 (defpackage :geodesic/test
-  (:use :common-lisp :polygon :geodesic :1am))
+  (:use :common-lisp :geodesic :1am))
 
 (in-package :geodesic/test)
 

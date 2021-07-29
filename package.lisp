@@ -5,10 +5,5 @@
            #:degrees
            #:cubic-roots
            #:quartic-roots
-           #:make-geo-point
-           #:point-latitude
-           #:point-longitude
-           #:point-altitude
            #:direct
-           #:inverse
-           #:move))
+           #:inverse))

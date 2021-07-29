@@ -361,7 +361,9 @@ toward AZIMUTH (degrees)."
            (omega12 (/ lon12 omega-bar))
            (alpha1 (init-alpha1 lat1 lat2 lon12 beta1 beta2 omega12))
            (delta-lon12 (/ pi 180))
-           (tolerance (/ pi 1e15)))
+           (tolerance (if (> lon12 (radians 179.5))
+                          (/ pi 1d15)
+                          (/ pi 1d14))))
       ;; First: find correct alpha1
       (loop repeat 30
             while (> (abs delta-lon12) tolerance)

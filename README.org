@@ -1,0 +1,10 @@
+* geodesic
+
+  A Common lisp library to solve direct and inverse geodesic
+  problem. It implements Charles Karney's method from this paper:
+  https://doi.org/10.1007/s00190-012-0578-z
+
+#+BEGIN_SRC lisp
+(geodesic:direct (geodesic:radians 40) (geodesic:radians 30) 1e7)
+(geodesic:inverse (geodesic:radians -30) (geodesic:radians 29.9) (geodesic:radians 179.8))
+#+END_SRC

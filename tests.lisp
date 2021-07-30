@@ -3,6 +3,8 @@
 
 (in-package :geodesic/test)
 
+(declaim (optimize (debug 3)))
+
 ;; Redefine 1am::passed with less dot.
 (defun 1am::passed ()
   (when (zerop (mod 1am::*pass-count* 100))

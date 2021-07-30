@@ -59,11 +59,11 @@
           while line
           do (destructuring-bind (lat1 lon1 azi1 lat2 lon2 azi2 s12 a12 m12 surf12)
                  (parse-line line)
-               (declare (ignore lon1 lon2 a12 m12 surf12))
-               (multiple-value-bind (mylat2 d myazi2)
+               (declare (ignore a12 m12 surf12))
+               (multiple-value-bind (mylat2 mylon12 myazi2)
                    (direct (radians lat1) (radians azi1) s12)
-                 (declare (ignore d))
                  (is (about= mylat2 (radians lat2) 1d-14))
+                 (is (about= mylon12 (radians (- lon2 lon1)) 1d-8))
                  (is (about= myazi2 (radians azi2) 1d-10)))))))
 
 (defun inverse-test (filename)

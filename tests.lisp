@@ -75,19 +75,19 @@
           do (destructuring-bind (lat1 lon1 azi1 lat2 lon2 azi2 s12 a12 m12 surf12)
                  (parse-line line)
                (declare (ignore a12 m12 surf12))
-               (let ((azimuth-tolerance (if (> (- lon2 lon1) 179) 1d-4 1d-7)))
+               (let ((azimuth-epsilon (if (> (- lon2 lon1) 179) 1d-4 1d-7)))
                  (multiple-value-bind (mys12 myazi1 myazi2)
                      (inverse (radians lat1) (radians lat2) (radians (- lon2 lon1)))
                    (is (about= mys12 s12 1/1000))
-                   (is (about= myazi1 (radians azi1) azimuth-tolerance))
-                   (is (about= myazi2 (radians azi2) azimuth-tolerance))
-                   (unless (about= myazi1 (radians azi1) azimuth-tolerance)
+                   (is (about= myazi1 (radians azi1) azimuth-epsilon))
+                   (is (about= myazi2 (radians azi2) azimuth-epsilon))
+                   (unless (about= myazi1 (radians azi1) azimuth-epsilon)
                      (incf failed)
                      #+nil
                      (format t "~&~a: ~@{~a ~}~%"
                              line-count
                              (float lat1 1d0) (float lat2 1d0) (float (- lon2 lon1) 1d0)
-                             azimuth-tolerance
+                             azimuth-epsilon
                              (- (radians azi1) myazi1))))))
           finally (unless (zerop failed)
                     (format t "~&~d failed on ~d~%" failed (1- line-count))))))

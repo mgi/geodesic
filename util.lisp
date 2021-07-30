@@ -39,3 +39,7 @@ and the form should be \"{-}[0-9]+\" or \"{-}[0-9]*.[0-9]+\""
       (loop until (>= angle (- pi))
             do (incf angle 2pi))
       angle)))
+
+(defun normalize-azimuth (angle)
+  "Normalize angle between 0 and π."
+  (if (minusp angle) (+ pi angle) angle))

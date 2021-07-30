@@ -314,6 +314,7 @@
     (values alpha0 sigma1 omega1 alpha2 sigma2 omega2 k2 epsilon)))
 
 (defun inverse (lat1 lat2 lon12)
+  (assert (>= lon12 0))
   (multiple-value-bind (lat1 lat2 swap-p) (normalize-latitudes lat1 lat2)
     (let* ((beta1 (reduce-latitude lat1))
            (beta2 (reduce-latitude lat2))
@@ -344,8 +345,13 @@
         ;; equation (7)
         (let ((s1 (* *b* (i sigma1 (a-1 epsilon) (c-1 epsilon))))
               (s2 (* *b* (i sigma2 (a-1 epsilon) (c-1 epsilon)))))
-          (when swap-p (rotatef alpha1 alpha2))
-          (values (abs (- s2 s1)) alpha1 alpha2))))))
+          (when swap-p
+            (rotatef alpha1 alpha2))
+          (when (or (not swap-p) (minusp (* lat1 lat2)))
+            (setf alpha1 (- alpha1) alpha2 (- alpha2)))
+          (values (abs (- s2 s1))
+                  (normalize-azimuth alpha1)
+                  (normalize-azimuth alpha2)))))))
 
 ;; (inverse (radians -30.12345d0) (radians -30.12344d0) (radians 0.00005d0))
 ;; (inverse (radians -30d0) (radians 29.9d0) (radians 179.8d0))

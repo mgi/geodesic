@@ -233,11 +233,14 @@
 ;; equation (44)
 (defun normalize-latitudes (lat1 lat2)
   "lat1 <= 0 and lat1 <= lat2 <= -lat1 (i.e. lat2 is closest to zero)."
-  ;; permute if lat1 is closest to zero
-  (when (< (abs lat1) (abs lat2))
-    (rotatef lat1 lat2))
-  (values (* (- (signum lat1)) lat1)
-          (* (- (signum lat1)) lat2)))
+  (let ((swap-p nil))
+    ;; permute if lat1 is closest to zero
+    (when (< (abs lat1) (abs lat2))
+      (rotatef lat1 lat2)
+      (setf swap-p t))
+    (values (* (- (signum lat1)) lat1)
+            (* (- (signum lat1)) lat2)
+            swap-p)))
 
 ;; equation (5) and (45)
 (defun alpha2 (alpha1 beta1 beta2)
@@ -311,7 +314,7 @@
     (values alpha0 sigma1 omega1 alpha2 sigma2 omega2 k2 epsilon)))
 
 (defun inverse (lat1 lat2 lon12)
-  (multiple-value-bind (lat1 lat2) (normalize-latitudes lat1 lat2)
+  (multiple-value-bind (lat1 lat2 swap-p) (normalize-latitudes lat1 lat2)
     (let* ((beta1 (reduce-latitude lat1))
            (beta2 (reduce-latitude lat2))
            (omega-bar (omega-bar beta1 beta2))
@@ -341,6 +344,7 @@
         ;; equation (7)
         (let ((s1 (* *b* (i sigma1 (a-1 epsilon) (c-1 epsilon))))
               (s2 (* *b* (i sigma2 (a-1 epsilon) (c-1 epsilon)))))
+          (when swap-p (rotatef alpha1 alpha2))
           (values (abs (- s2 s1)) alpha1 alpha2))))))
 
 ;; (inverse (radians -30.12345d0) (radians -30.12344d0) (radians 0.00005d0))

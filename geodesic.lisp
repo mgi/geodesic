@@ -192,7 +192,7 @@
                (i3-sigma2 (i sigma2 a3 c3))
                (lon12 (- (longitude omega2 alpha0 i3-sigma2)
                          (longitude omega1 alpha0 i3-sigma1))))
-          (values (dereduce-latitude beta2) lon12 alpha2))))))
+          (values (dereduce-latitude beta2) (normalize lon12) alpha2))))))
 
 ;; (direct (radians 40) (radians 30) 10e6)
 

@@ -3,6 +3,7 @@
 (asdf:defsystem :geodesic
   :author "Manuel Giraud <manuel@ledu-giraud.fr>"
   :description "Library for geodesic calculations."
+  :license "ISC"
   :serial t
   :components ((:file "package")
                (:file "util")

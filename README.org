@@ -5,6 +5,14 @@
   https://doi.org/10.1007/s00190-012-0578-z
 
 #+BEGIN_SRC lisp
-(geodesic:direct (geodesic:radians 40) (geodesic:radians 30) 1e7)
-(geodesic:inverse (geodesic:radians -30) (geodesic:radians 29.9) (geodesic:radians 179.8))
+  ;; Two examples from the paper
+  (geodesic:direct (geodesic:radians 40) (geodesic:radians 30) 1e7)
+   -> 0.7294308683855781d0
+   ->  2.405847362846288d0
+   ->  2.6021143369561823d0
+
+  (geodesic:inverse (geodesic:radians -30) (geodesic:radians 29.9) (geodesic:radians 179.8))
+   -> 1.9989832879260477d7
+   -> 0.3160648483358468d0
+   -> 2.825854840938509d0
 #+END_SRC

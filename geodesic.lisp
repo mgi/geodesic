@@ -201,16 +201,22 @@
   (- (i sigma (a-1 epsilon) (c-1 epsilon))
      (i sigma (a-2 epsilon) (c-2 epsilon))))
 
-;; equation (38)
+;; equation (38) and (39)
 (defun m12 (k2 sigma1 sigma2 epsilon)
+  "Returns m12 and M12."
   (let ((cs1 (cos sigma1))
         (ss1 (sin sigma1))
         (cs2 (cos sigma2))
         (ss2 (sin sigma2)))
-    (* *b*
-       (- (* (sqrt (1+ (* k2 ss2 ss2))) cs1 ss2)
-          (* (sqrt (1+ (* k2 ss1 ss1))) ss1 cs2)
-          (* cs1 cs2 (- (j sigma2 epsilon) (j sigma1 epsilon)))))))
+    (values
+     (* *b*
+	(- (* (sqrt (1+ (* k2 ss2 ss2))) cs1 ss2)
+           (* (sqrt (1+ (* k2 ss1 ss1))) ss1 cs2)
+           (* cs1 cs2 (- (j sigma2 epsilon) (j sigma1 epsilon)))))
+     (- (+ (* cs1 cs2) (* ss1 ss2 (sqrt (1+ (* k2 ss2 ss2)))
+			  (/ (sqrt (1+ (* k2 ss1 ss1))))))
+	(/ (* ss1 cs2 (- (j sigma2 epsilon) (j sigma1 epsilon)))
+	   (sqrt (1+ (* k2 ss1 ss1))))))))
 
 ;; equation (42)
 (defun a-2 (epsilon)
@@ -324,7 +330,8 @@
            (delta-lon12 (/ pi 180))
            (tolerance (if (> lon12 (radians 179.5))
                           (/ pi 1d15)
-                          (/ pi 1d14))))
+                          (/ pi 1d14)))
+	   m12 mm12)
       ;; First: find correct alpha1
       (loop repeat 30
             while (> (abs delta-lon12) tolerance)
@@ -334,8 +341,8 @@
                    (let* ((i3-sigma1 (i sigma1 a3 c3))
                           (i3-sigma2 (i sigma2 a3 c3))
                           (lon12-new (abs (- (longitude omega2 alpha0 i3-sigma2)
-                                             (longitude omega1 alpha0 i3-sigma1))))
-                          (m12 (m12 k2 sigma1 sigma2 epsilon)))
+                                             (longitude omega1 alpha0 i3-sigma1)))))
+		     (multiple-value-setq (m12 mm12) (m12 k2 sigma1 sigma2 epsilon))
                      (setf delta-lon12 (- lon12-new lon12)
                            alpha1 (normalize (+ alpha1 (delta-alpha1 delta-lon12 m12 alpha2 beta2))))))))
       ;; Second: resolve s12
@@ -351,7 +358,8 @@
             (setf alpha1 (- alpha1) alpha2 (- alpha2)))
           (values (abs (- s2 s1))
                   (normalize-azimuth alpha1)
-                  (normalize-azimuth alpha2)))))))
+                  (normalize-azimuth alpha2)
+		  m12 mm12))))))
 
 ;; (inverse (radians -30.12345d0) (radians -30.12344d0) (radians 0.00005d0))
 ;; (inverse (radians -30d0) (radians 29.9d0) (radians 179.8d0))

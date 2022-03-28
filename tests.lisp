@@ -59,12 +59,13 @@
           while line
           do (destructuring-bind (lat1 lon1 azi1 lat2 lon2 azi2 s12 a12 m12 surf12)
                  (parse-line line)
-               (declare (ignore a12 m12 surf12))
-               (multiple-value-bind (mylat2 mylon12 myazi2)
+               (declare (ignore a12 surf12))
+               (multiple-value-bind (mylat2 mylon12 myazi2 mym12)
                    (direct (radians lat1) (radians azi1) s12)
                  (is (about= mylat2 (radians lat2) 1d-14))
                  (is (about= mylon12 (radians (- lon2 lon1)) 1d-8))
-                 (is (about= myazi2 (radians azi2) 1d-10)))))))
+                 (is (about= myazi2 (radians azi2) 1d-10))
+		 (is (about= mym12 m12 1d-7)))))))
 
 (defun inverse-test (filename)
   (with-open-file (fd filename)
@@ -72,14 +73,15 @@
           while line
           do (destructuring-bind (lat1 lon1 azi1 lat2 lon2 azi2 s12 a12 m12 surf12)
                  (parse-line line)
-               (declare (ignore a12 m12 surf12))
+               (declare (ignore a12 surf12))
                ;; we have less precision on antipodal points
                (let ((azimuth-epsilon (if (> (- lon2 lon1) 179) 1d-4 1d-7)))
-                 (multiple-value-bind (mys12 myazi1 myazi2)
+                 (multiple-value-bind (mys12 myazi1 myazi2 mym12)
                      (inverse (radians lat1) (radians lat2) (radians (- lon2 lon1)))
                    (is (about= mys12 s12 1/1000))
                    (is (about= myazi1 (radians azi1) azimuth-epsilon))
-                   (is (about= myazi2 (radians azi2) azimuth-epsilon))))))))
+                   (is (about= myazi2 (radians azi2) azimuth-epsilon))
+		   (is (about= mym12 m12 1/1000))))))))
 
 (test geod-short-direct (direct-test *short-file*))
 (test geod-short-inverse (inverse-test *short-file*))
